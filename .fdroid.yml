@@ -1,0 +1,31 @@
+Categories:
+  - Games
+License: MIT
+
+AutoUpdateMode: Version v%v
+UpdateCheckMode: Tags
+VercodeOperation:
+  - '%c'
+UpdateCheckData: 'app/build.gradle.kts|versionCode = (\d+)||versionName = "(.+)"'
+CurrentVersion: '1.0'
+CurrentVersionCode: 1
+
+Builds:
+  - versionName: '1.0'
+    versionCode: 1
+    commit: v1.0
+    gradle:
+      - yes
+    output: app/build/outputs/apk/release/app-release-unsigned.apk
+
+AutoName: Kwadra
+Summary: Place pieces on an 8×8 board and clear full lines
+Description: |-
+  Kwadra is an 8×8 block puzzle. Three pieces sit in the tray. Drag one
+  onto the board. A full row or column disappears, and a clear that
+  empties the board scores a bonus.
+
+  The accent color follows the phone. Light, dark, and system themes are
+  in the settings, with eleven languages. Sound and vibration can be
+  turned off. There are no accounts, ads, or network calls. The game
+  saves on the device.

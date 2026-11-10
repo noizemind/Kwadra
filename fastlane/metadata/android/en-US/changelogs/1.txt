@@ -1,0 +1,1 @@
+First release. An 8×8 board, three pieces, line clears, eleven languages, and a theme taken from the phone accent.

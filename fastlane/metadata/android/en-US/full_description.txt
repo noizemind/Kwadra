@@ -1,0 +1,5 @@
+Kwadra is an 8×8 block puzzle. Three pieces wait in the tray. Drag one onto the board. A full row or a full column vanishes. Clearing several lines at once raises the combo, and emptying the whole board adds a bonus.
+
+The pieces take their hue from the phone accent. Choose system, light, or dark. The interface is in Russian, Ukrainian, English, Belarusian, Estonian, Japanese, French, German, Chinese, Korean, and Vietnamese.
+
+Sound and vibration follow the place, the clear, and a rejected drop. Both can be switched off. Nothing is sent off the phone: there is no account, no ad, and no network request. An unfinished game stays on the device.

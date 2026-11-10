@@ -1,0 +1,1 @@
+Place pieces on an 8×8 board and clear full lines
