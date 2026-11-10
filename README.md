@@ -18,22 +18,6 @@ gradlew.bat :app:testDebugUnitTest :app:assembleDebug
 
 Отладочный пакет: `app\build\outputs\apk\debug\app-debug.apk`.
 
-Релизная сборка без подписи, её ждёт F-Droid:
-
-```bat
-gradlew.bat :app:assembleRelease
-```
-
-Файл: `app\build\outputs\apk\release\app-release-unsigned.apk`.
-
-## F-Droid
-
-В репозитории есть то, что просит [инструкция F-Droid](https://f-droid.org/docs/Submitting_to_F-Droid_Quick_Start_Guide/): файл `LICENSE` (MIT), рецепт `.fdroid.yml`, описания `fastlane/metadata/android/en-US` и `ru-RU`. Зависимости — AndroidX, Jetpack Compose и JUnit. Все они со свободными лицензиями и лежат в Google Maven или Maven Central. Шрифт Manrope — OFL 1.1, текст лицензии в `LICENSES/OFL-Manrope.txt`.
-
-Сразу в каталог это не попадёт. Политика включения просит, чтобы приложение развивалось хотя бы три месяца, либо у него уже были пользователи, либо автор уже ведёт другие приложения в F-Droid. Скриншотов телефона в метаданных нет: без них заявку тоже возвращают. Идентификатор `app.kwadra` не привязан к домену автора, а F-Droid это советует.
-
-Заявка подаётся в [fdroiddata](https://gitlab.com/fdroid/fdroiddata): issue с ссылкой на этот репозиторий и тег версии, например `v1.0`.
-
 ## License
 
 Code is MIT. See [LICENSE](LICENSE).
