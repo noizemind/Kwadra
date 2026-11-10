@@ -1,6 +1,8 @@
 Categories:
   - Games
 License: MIT
+SourceCode: https://github.com/noizemind/Kwadra
+IssueTracker: https://github.com/noizemind/Kwadra/issues
 
 AutoUpdateMode: Version v%v
 UpdateCheckMode: Tags
