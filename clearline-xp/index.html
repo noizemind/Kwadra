@@ -2,70 +2,40 @@
 <html>
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=5">
-  <title>Clearline XP</title>
+  <title>Clearline</title>
   <link rel="stylesheet" type="text/css" href="aero.css">
-  <!--[if IE]>
-  <style type="text/css">
-    body { behavior: url(null); }
-  </style>
-  <![endif]-->
 </head>
-<body bgcolor="#9ED4F7" background="">
-  <table width="760" border="0" cellpadding="0" cellspacing="0" align="center" class="shell">
+<body bgcolor="#9ED4F7">
+  <table width="100%" border="0" cellpadding="0" cellspacing="0">
+    <tr><td class="brand">
+      <table width="100%" border="0" cellpadding="10" cellspacing="0">
+        <tr>
+          <td><div class="logo">Clearline</div><div class="tag">LAN chat</div></td>
+          <td align="right"><span id="status" class="status">…</span></td>
+        </tr>
+      </table>
+    </td></tr>
     <tr>
-      <td class="topglow" colspan="2" height="18">&nbsp;</td>
-    </tr>
-    <tr>
-      <td class="brand" colspan="2">
-        <table width="100%" border="0" cellpadding="8" cellspacing="0">
+      <td>
+        <table width="100%" border="0" cellpadding="10" cellspacing="0">
           <tr>
-            <td>
-              <div class="logo">Clearline</div>
-              <div class="tag">sky · glass · voice · LAN</div>
+            <td width="30%" valign="top" class="side">
+              <div class="pane-title">Peers</div>
+              <div id="peers" class="peers">waiting…</div>
+              <div class="pane-title">Your name</div>
+              <input type="text" id="nick" class="field" value="Guest" size="16">
             </td>
-            <td align="right" valign="middle">
-              <span id="status" class="status">bridge: searching…</span>
+            <td valign="top" class="main">
+              <div class="pane-title">Chat</div>
+              <div id="chat" class="chat"></div>
+              <input type="text" id="msg" class="field wide" value="">
+              <input type="button" class="btn" value="Send" onclick="sendChat();">
             </td>
           </tr>
         </table>
       </td>
     </tr>
-    <tr>
-      <td width="220" valign="top" class="side">
-        <div class="pane-title">Nearby (LAN)</div>
-        <div id="peers" class="peers">No peers yet.<br>Start lan-bridge.exe / node bridge.js</div>
-        <div class="pane-title">Dial</div>
-        <form name="dialForm" action="#" onsubmit="return fakeDial();">
-          <input type="text" name="num" id="num" value="" size="18" class="field">
-          <br><br>
-          <input type="button" value="  Call  " class="btn" onclick="fakeDial();">
-        </form>
-        <p class="hint">SIP dial needs the modern Clearline app. This XP page does LAN chat via the bridge.</p>
-      </td>
-      <td valign="top" class="main">
-        <div class="pane-title">LAN Messenger</div>
-        <div id="chat" class="chat">&nbsp;</div>
-        <form name="chatForm" action="#" onsubmit="return sendChat();">
-          <table width="100%" border="0" cellpadding="0" cellspacing="0">
-            <tr>
-              <td>
-                <input type="text" id="msg" name="msg" class="field wide" value="">
-              </td>
-              <td width="90" align="right">
-                <input type="button" value=" Send " class="btn" onclick="sendChat();">
-              </td>
-            </tr>
-          </table>
-        </form>
-        <p class="hint">Works on Windows XP + IE6/7/8 with the local Clearline LAN bridge (long-poll).</p>
-      </td>
-    </tr>
-    <tr>
-      <td colspan="2" class="foot">Clearline · Frutiger Aero softphone shell · no Skype branding</td>
-    </tr>
   </table>
-
   <script type="text/javascript" src="xp.js"></script>
 </body>
 </html>

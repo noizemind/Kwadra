@@ -1,19 +1,22 @@
-# Clearline XP
+# Clearline on a router
 
-HTML 4.01 + ES3 JavaScript softphone shell that runs on **Windows XP** browsers (IE6/7/8).
-
-LAN chat talks to nearby Clearline Android/Windows peers through `bridge.js`
-(UDP presence + TCP chat + HTTP long-poll for the XP page).
-
-## Run
+One Python 3 file. No Node. No pip.
 
 ```bash
-node bridge.js
+cd clearline-xp
+python3 clearline-router.py
 ```
 
-Open `http://127.0.0.1:38480/` in IE on XP (or any browser).
+Open on any device in the LAN:
 
-## Limits
+```
+http://<router-ip>:38480/
+```
 
-- SIP calling is not available in IE — use Clearline Android / Windows for voice.
-- IPA (iOS) builds need macOS + Xcode signing; this Linux agent cannot produce `.ipa`.
+Optional:
+
+```bash
+CL_NAME=Kitchen CL_PORT=38480 python3 clearline-router.py
+```
+
+Talks to Clearline Android / Windows LAN chat on the same Wi‑Fi.
