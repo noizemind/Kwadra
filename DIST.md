@@ -4,7 +4,7 @@
 | --- | --- |
 | **Android APK** | `./gradlew :clearline:assembleDebug` → `clearline/build/outputs/apk/debug/clearline-debug.apk` |
 | **Windows** | `cd windows-clearline && npm run build && npx electron-builder --win dir --x64 -c.win.signAndEditExecutable=false` → `release/win-unpacked/Clearline.exe` |
-| **XP HTML** | `cd clearline-xp && node bridge.js` → open `http://127.0.0.1:38480/` |
+| **Router / XP HTML** | `cd clearline-xp && python3 clearline-router.py` → `http://<router-ip>:38480/` (stdlib only) |
 | **iOS IPA** | Not buildable in this Linux environment. Needs macOS + Xcode + Apple Developer signing. |
 
 ## LAN P2P messenger
