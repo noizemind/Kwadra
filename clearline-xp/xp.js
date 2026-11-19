@@ -1,6 +1,7 @@
-/* ES3 — IE6+ / OpenWrt uhttpd browsers */
-var BRIDGE = ""; /* same host */
+/* ES3 — IE6+ / Windows XP. Progressive enhancement only. */
+var BRIDGE = "";
 var lastId = 0;
+var jsMode = false;
 
 function $(id) { return document.getElementById(id); }
 
@@ -29,12 +30,14 @@ function esc(s) {
 
 function setStatus(t) { var s = $("status"); if (s) s.innerHTML = t; }
 
-function line(from, text, mine) {
-  var box = $("chat");
-  if (!box) return;
-  box.innerHTML += "<div><b class=\"" + (mine ? "bubble-me" : "bubble-them") + "\">" +
-    esc(from) + ":</b> " + esc(text) + "</div>";
-  box.scrollTop = box.scrollHeight;
+function nick() {
+  var n = $("nick");
+  return (n && n.value) ? n.value : "Guest";
+}
+
+function syncNameHidden() {
+  var h = $("nameField");
+  if (h) h.value = nick();
 }
 
 function peersHtml(list) {
@@ -46,14 +49,28 @@ function peersHtml(list) {
   el.innerHTML = h;
 }
 
-function nick() {
-  var n = $("nick");
-  return (n && n.value) ? n.value : "Guest";
+function appendLine(from, text, mine) {
+  var box = $("chat");
+  if (!box) return;
+  box.innerHTML += "<div><b class=\"" + (mine ? "bubble-me" : "bubble-them") + "\">" +
+    esc(from) + ":</b> " + esc(text) + "</div>";
+  box.scrollTop = box.scrollHeight;
+}
+
+function disableMetaRefresh() {
+  var metas = document.getElementsByTagName("meta");
+  for (var i = 0; i < metas.length; i++) {
+    var http = metas[i].httpEquiv || metas[i].getAttribute("http-equiv");
+    if (http && String(http).toLowerCase() == "refresh") {
+      if (metas[i].parentNode) metas[i].parentNode.removeChild(metas[i]);
+      break;
+    }
+  }
 }
 
 function poll() {
   xhr("GET", BRIDGE + "/poll?since=" + lastId, null, function (txt) {
-    setStatus("online");
+    setStatus("live (JS)");
     try {
       var data = (new Function("return (" + txt + ");"))();
       if (data.peers) peersHtml(data.peers);
@@ -61,7 +78,7 @@ function poll() {
         for (var i = 0; i < data.messages.length; i++) {
           var m = data.messages[i];
           if (m.id > lastId) lastId = m.id;
-          if (!m.mine) line(m.fromName || "peer", m.text || "", false);
+          if (!m.mine) appendLine(m.fromName || "peer", m.text || "", false);
         }
       }
     } catch (e) { setStatus("bad data"); }
@@ -72,27 +89,49 @@ function poll() {
   });
 }
 
-function sendChat() {
+function sendAjax() {
   var inp = $("msg");
   if (!inp || !inp.value) return false;
   var text = inp.value;
   inp.value = "";
-  line(nick(), text, true);
+  appendLine(nick(), text, true);
+  syncNameHidden();
   xhr("POST", BRIDGE + "/send",
-    "name=" + encodeURIComponent(nick()) + "&text=" + encodeURIComponent(text),
+    "name=" + encodeURIComponent(nick()) + "&text=" + encodeURIComponent(text) + "&ajax=1",
     function () {}, function () { setStatus("send fail"); });
   return false;
 }
 
 window.onload = function () {
-  line("system", "Clearline LAN ready", false);
+  /* If we got here, JS works — switch to live mode */
+  jsMode = true;
+  disableMetaRefresh();
+  setStatus("live (JS)");
+  syncNameHidden();
+  var nickEl = $("nick");
+  if (nickEl) {
+    nickEl.onchange = syncNameHidden;
+    nickEl.onblur = syncNameHidden;
+  }
+  var forms = document.getElementsByTagName("form");
+  for (var i = 0; i < forms.length; i++) {
+    if (forms[i].action && String(forms[i].action).indexOf("/send") >= 0) {
+      forms[i].onsubmit = function () { return sendAjax(); };
+    }
+  }
   var msg = $("msg");
   if (msg) {
     msg.onkeypress = function (e) {
       e = e || window.event;
       var k = e.keyCode || e.which;
-      if (k == 13) { sendChat(); return false; }
+      if (k == 13) { sendAjax(); return false; }
     };
+  }
+  /* seed lastId from server-rendered count if present */
+  var box = $("chat");
+  if (box && box.getAttribute) {
+    var sid = box.getAttribute("data-last-id");
+    if (sid) lastId = parseInt(sid, 10) || 0;
   }
   poll();
 };

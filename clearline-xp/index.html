@@ -4,14 +4,21 @@
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
   <title>Clearline</title>
   <link rel="stylesheet" type="text/css" href="aero.css">
+  <!-- no-JS auto refresh -->
+  <meta http-equiv="refresh" content="5;url=/">
 </head>
 <body bgcolor="#9ED4F7">
+  <noscript>
+    <p style="background:#FFF3CD;border:1px solid #F0B429;padding:8px;margin:8px;font-family:Tahoma,sans-serif;font-size:12px;">
+      JavaScript off — OK. Page refreshes every 5 seconds. Send works via the form below.
+    </p>
+  </noscript>
   <table width="100%" border="0" cellpadding="0" cellspacing="0">
     <tr><td class="brand">
       <table width="100%" border="0" cellpadding="10" cellspacing="0">
         <tr>
-          <td><div class="logo">Clearline</div><div class="tag">LAN chat</div></td>
-          <td align="right"><span id="status" class="status">…</span></td>
+          <td><div class="logo">Clearline</div><div class="tag">LAN chat · XP / router</div></td>
+          <td align="right"><span id="status" class="status">server HTML</span></td>
         </tr>
       </table>
     </td></tr>
@@ -21,15 +28,22 @@
           <tr>
             <td width="30%" valign="top" class="side">
               <div class="pane-title">Peers</div>
-              <div id="peers" class="peers">waiting…</div>
+              <div id="peers" class="peers"><!--PEERS--></div>
               <div class="pane-title">Your name</div>
-              <input type="text" id="nick" class="field" value="Guest" size="16">
+              <form method="get" action="/">
+                <input type="text" name="nick" id="nick" class="field" value="<!--NICK-->" size="16">
+                <input type="submit" class="btn" value="Set">
+              </form>
             </td>
             <td valign="top" class="main">
               <div class="pane-title">Chat</div>
-              <div id="chat" class="chat"></div>
-              <input type="text" id="msg" class="field wide" value="">
-              <input type="button" class="btn" value="Send" onclick="sendChat();">
+              <div id="chat" class="chat"><!--CHAT--></div>
+              <form method="post" action="/send" accept-charset="utf-8">
+                <input type="hidden" name="name" id="nameField" value="<!--NICK-->">
+                <input type="text" name="text" id="msg" class="field wide" value="">
+                <input type="submit" class="btn" value="Send">
+              </form>
+              <p class="hint">Works without JavaScript (form + refresh). With JS on XP/IE: live updates.</p>
             </td>
           </tr>
         </table>
