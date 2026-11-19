@@ -1,0 +1,123 @@
+/* Frutiger Aero-ish, IE6-friendly: tables, no flex/grid, no CSS3-only layout */
+body {
+  margin: 0;
+  padding: 16px 0;
+  font-family: "Segoe UI", Tahoma, Verdana, Arial, sans-serif;
+  font-size: 13px;
+  color: #0A3A5C;
+  background: #9ED4F7;
+}
+
+.shell {
+  background: #E8F6FF;
+  border: 2px solid #FFFFFF;
+}
+
+.topglow {
+  background: #FFFFFF;
+  height: 12px;
+}
+
+.brand {
+  background: #2EA8E5;
+  color: #FFFFFF;
+}
+
+.logo {
+  font-size: 28px;
+  font-weight: bold;
+  color: #FFFFFF;
+}
+
+.tag {
+  font-size: 11px;
+  color: #E8FBFF;
+}
+
+.status {
+  font-size: 11px;
+  color: #FFFFFF;
+  background: #0B6BB5;
+  padding: 4px 8px;
+}
+
+.side {
+  background: #D9F0FF;
+  border-right: 1px solid #FFFFFF;
+  padding: 10px;
+}
+
+.main {
+  background: #F5FBFF;
+  padding: 10px;
+}
+
+.pane-title {
+  font-weight: bold;
+  color: #0B6BB5;
+  margin: 4px 0 8px 0;
+  border-bottom: 1px solid #B5D8F0;
+  padding-bottom: 3px;
+}
+
+.peers {
+  background: #FFFFFF;
+  border: 1px solid #B5D8F0;
+  padding: 8px;
+  height: 120px;
+  overflow: auto;
+  margin-bottom: 12px;
+}
+
+.chat {
+  background: #FFFFFF;
+  border: 1px solid #B5D8F0;
+  padding: 8px;
+  height: 280px;
+  overflow: auto;
+  margin-bottom: 8px;
+}
+
+.field {
+  border: 1px solid #7FE3F0;
+  background: #FFFFFF;
+  padding: 4px;
+  font-size: 13px;
+  color: #0A3A5C;
+}
+
+.wide {
+  width: 98%;
+}
+
+.btn {
+  background: #2EA8E5;
+  color: #FFFFFF;
+  border: 1px solid #0B6BB5;
+  font-weight: bold;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.hint {
+  font-size: 11px;
+  color: #5A7A94;
+  margin-top: 10px;
+}
+
+.foot {
+  background: #1E9BE0;
+  color: #FFFFFF;
+  font-size: 11px;
+  padding: 6px 10px;
+  text-align: center;
+}
+
+.bubble-me {
+  color: #0B6BB5;
+  font-weight: bold;
+}
+
+.bubble-them {
+  color: #1B5F8A;
+}
