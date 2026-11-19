@@ -1,22 +1,17 @@
 # Clearline on a router
 
-One Python 3 file. No Node. No pip.
+**One file.** Copy `clearline-router.py` to the router (Python 3). No pip, no Node, no extra HTML files.
 
 ```bash
-cd clearline-xp
 python3 clearline-router.py
 ```
 
-Open on any device in the LAN:
-
-```
-http://<router-ip>:38480/
-```
-
-Optional:
+Open: `http://<router-ip>:38480/`
 
 ```bash
 CL_NAME=Kitchen CL_PORT=38480 python3 clearline-router.py
 ```
 
-Talks to Clearline Android / Windows LAN chat on the same Wi‑Fi.
+Optional check: `http://<router-ip>:38480/health`
+
+Meshes with Clearline Android / Windows LAN chat on the same Wi‑Fi.
