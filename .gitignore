@@ -11,3 +11,7 @@ captures/
 .externalNativeBuild/
 .cxx/
 *.class
+node_modules/
+windows-clearline/dist/
+windows-clearline/release/
+*.log

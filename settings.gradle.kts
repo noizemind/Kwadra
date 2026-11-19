@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "Kwadra"
 include(":app")
+include(":clearline")
