@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain, shell } = require("electron");
 const path = require("path");
 const dgram = require("dgram");
 const crypto = require("crypto");
+const { createLan } = require("./lan.cjs");
 
 let mainWindow = null;
 let sipSocket = null;
@@ -118,8 +119,17 @@ ipcMain.handle("sip:register", async () => {
   }
 });
 
+const lan = createLan((channel, payload) => {
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send(channel, payload);
+});
+
+ipcMain.handle("lan:start", (_e, name) => lan.start(name));
+ipcMain.handle("lan:stop", () => lan.stop());
+ipcMain.handle("lan:send", (_e, text) => lan.sendChat(text));
+
 app.whenReady().then(createWindow);
 app.on("window-all-closed", () => {
   if (sipSocket) sipSocket.close();
+  lan.stop();
   if (process.platform !== "darwin") app.quit();
 });

@@ -11,6 +11,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.togetherWith
@@ -54,7 +55,9 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Wifi
 import androidx.compose.material.icons.automirrored.filled.VolumeUp
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -112,7 +115,8 @@ fun ClearlineApp(vm: ClearlineController) {
                 when (state.tab) {
                     0 -> ContactsPane(vm)
                     1 -> DialerPane(vm)
-                    2 -> RecentsPane(vm)
+                    2 -> LanPane(vm)
+                    3 -> RecentsPane(vm)
                     else -> SettingsPane(vm)
                 }
                 BottomNav(selected = state.tab, onSelect = vm::setTab)
@@ -125,6 +129,53 @@ fun ClearlineApp(vm: ClearlineController) {
             ) {
                 state.activeCall?.let { CallOverlay(vm) }
             }
+
+            AnimatedVisibility(
+                visible = state.splash,
+                enter = fadeIn(),
+                exit = fadeOut() + scaleOut(targetScale = 1.05f),
+            ) {
+                AeroSplash { vm.dismissSplash() }
+            }
+        }
+    }
+}
+
+@Composable
+private fun AeroSplash(onDone: () -> Unit) {
+    val colors = LocalClearColors.current
+    val type = LocalClearType.current
+    val pulse = rememberInfiniteTransition(label = "splash")
+    val scale by pulse.animateFloat(
+        initialValue = 0.96f,
+        targetValue = 1.04f,
+        animationSpec = infiniteRepeatable(tween(1400, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "ss",
+    )
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(colors.heroBrush)
+            .clickable(onClick = onDone),
+        contentAlignment = Alignment.Center,
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(
+                Modifier
+                    .scale(scale)
+                    .size(110.dp)
+                    .clip(CircleShape)
+                    .background(
+                        Brush.verticalGradient(listOf(Color(0xAAFFFFFF), Color(0x55FFFFFF))),
+                    )
+                    .border(2.dp, Color.White.copy(alpha = 0.7f), CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text("C", style = type.brand.copy(fontSize = 52.sp), color = Color.White)
+            }
+            Spacer(Modifier.height(18.dp))
+            Text("Clearline", style = type.brand.copy(fontSize = 36.sp), color = Color.White)
+            Text("sky · glass · voice", style = type.caption, color = Color.White.copy(alpha = 0.8f))
         }
     }
 }
@@ -196,7 +247,7 @@ private fun ContactsPane(vm: ClearlineController) {
                 RoundIcon(Icons.Default.Add, "Add") { editing = Contact(name = "", uri = "") }
             },
         )
-        SearchField(state.search, vm::setSearch)
+        SearchField(state.search, vm::setSearch, placeholder = "Search people")
         LazyColumn(
             contentPadding = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
@@ -317,6 +368,106 @@ private fun DialerPane(vm: ClearlineController) {
                 Icon(Icons.Default.Call, contentDescription = "Call", tint = Color.White, modifier = Modifier.size(30.dp))
             }
             Spacer(Modifier.size(56.dp))
+        }
+    }
+}
+
+@Composable
+private fun LanPane(vm: ClearlineController) {
+    val colors = LocalClearColors.current
+    val type = LocalClearType.current
+    val state = vm.state
+    Column(Modifier.fillMaxSize()) {
+        HeroHeader(subtitle = if (state.lanOn) "LAN mesh · ${state.lanPeers.size} nearby" else "LAN mesh offline")
+        Box(Modifier.padding(horizontal = 16.dp)) {
+            ToggleRow(
+                title = "Share presence on Wi‑Fi",
+                subtitle = "UDP beacon + TCP chat on the local network",
+                checked = state.lanOn,
+                onToggle = vm::toggleLan,
+            )
+        }
+        if (state.lanPeers.isNotEmpty()) {
+            Text(
+                "Nearby",
+                style = type.caption,
+                color = colors.muted,
+                modifier = Modifier.padding(horizontal = 22.dp, vertical = 6.dp),
+            )
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
+                state.lanPeers.take(6).forEach { peer ->
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Box(
+                            Modifier
+                                .size(44.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    Brush.verticalGradient(listOf(Color(0xFF9AEFFF), Color(0xFF2EA8E5))),
+                                )
+                                .border(1.dp, Color.White, CircleShape),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Text(peer.name.take(1).uppercase(), color = Color.White, style = type.body)
+                        }
+                        Text(peer.name.take(8), style = type.caption, color = colors.inkSoft, maxLines = 1)
+                    }
+                }
+            }
+        }
+        LazyColumn(
+            Modifier
+                .weight(1f)
+                .padding(horizontal = 16.dp),
+            reverseLayout = false,
+            contentPadding = PaddingValues(vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            items(state.lanMessages, key = { it.id }) { msg ->
+                val align = if (msg.mine) Alignment.CenterEnd else Alignment.CenterStart
+                Box(Modifier.fillMaxWidth(), contentAlignment = align) {
+                    Column(
+                        Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                if (msg.mine) Brush.verticalGradient(listOf(Color(0xFF7FE3F0), Color(0xFF2EA8E5)))
+                                else Brush.verticalGradient(listOf(Color(0xF2FFFFFF), Color(0xCCE8F6FF))),
+                            )
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                    ) {
+                        if (!msg.mine) {
+                            Text(msg.fromName, style = type.caption, color = colors.inkSoft)
+                        }
+                        Text(msg.text, style = type.body, color = if (msg.mine) Color.White else colors.ink)
+                    }
+                }
+            }
+            if (state.lanMessages.isEmpty()) {
+                item {
+                    Text(
+                        "Turn on LAN and say hi — peers on the same Wi‑Fi will light up.",
+                        style = type.body,
+                        color = colors.muted,
+                        modifier = Modifier.padding(16.dp),
+                    )
+                }
+            }
+        }
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(Modifier.weight(1f)) {
+                SearchField(state.lanDraft, vm::setLanDraft, placeholder = "Message the LAN…")
+            }
+            Spacer(Modifier.width(4.dp))
+            RoundIcon(Icons.AutoMirrored.Filled.Send, "Send") { vm.sendLanChat() }
         }
     }
 }
@@ -614,8 +765,9 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
     val items = listOf(
         Triple(Icons.Default.People, "People", 0),
         Triple(Icons.Default.Dialpad, "Dial", 1),
-        Triple(Icons.Default.History, "Recents", 2),
-        Triple(Icons.Default.Settings, "Setup", 3),
+        Triple(Icons.Default.Wifi, "LAN", 2),
+        Triple(Icons.Default.History, "Recents", 3),
+        Triple(Icons.Default.Settings, "Setup", 4),
     )
     Row(
         Modifier
@@ -727,11 +879,11 @@ private fun DialKey(label: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SearchField(value: String, onChange: (String) -> Unit) {
+private fun SearchField(value: String, onChange: (String) -> Unit, placeholder: String = "Search") {
     val colors = LocalClearColors.current
     Box(
         Modifier
-            .padding(horizontal = 20.dp, vertical = 8.dp)
+            .padding(horizontal = 12.dp, vertical = 8.dp)
             .fillMaxWidth()
             .shadow(10.dp, RoundedCornerShape(20.dp), ambientColor = Color(0x332EA8E5), spotColor = Color(0x442EA8E5))
             .clip(RoundedCornerShape(20.dp))
@@ -742,7 +894,7 @@ private fun SearchField(value: String, onChange: (String) -> Unit) {
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         if (value.isEmpty()) {
-            Text("Search people", style = LocalClearType.current.body, color = colors.muted)
+            Text(placeholder, style = LocalClearType.current.body, color = colors.muted)
         }
         BasicTextField(
             value = value,

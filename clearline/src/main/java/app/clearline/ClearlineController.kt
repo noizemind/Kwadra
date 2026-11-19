@@ -16,8 +16,11 @@ import app.clearline.data.CallPhase
 import app.clearline.data.Contact
 import app.clearline.data.SipAccount
 import app.clearline.data.Store
+import app.clearline.lan.LanMesh
 import app.clearline.sip.SdpMedia
 import app.clearline.sip.SipEngine
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class ClearlineController(app: Application) : AndroidViewModel(app) {
     private val store = Store(app)
@@ -26,6 +29,16 @@ class ClearlineController(app: Application) : AndroidViewModel(app) {
     private val route = VoiceRoute(app)
     private val appCtx = app.applicationContext
     private var remoteMedia: SdpMedia? = null
+
+    private val lan = LanMesh(
+        context = app,
+        scope = viewModelScope,
+        onPeers = { peers -> state = state.copy(lanPeers = peers) },
+        onMessage = { msg ->
+            state = state.copy(lanMessages = (state.lanMessages + msg).takeLast(200))
+            if (!msg.mine) tones.tap()
+        },
+    )
 
     var state by mutableStateOf(
         AppState(
@@ -102,6 +115,17 @@ class ClearlineController(app: Application) : AndroidViewModel(app) {
     init {
         sip.configure(state.account)
         sip.start()
+        viewModelScope.launch {
+            delay(1600)
+            dismissSplash()
+        }
+    }
+
+    fun dismissSplash() {
+        if (state.splash) {
+            state = state.copy(splash = false)
+            tones.connect()
+        }
     }
 
     fun setTab(tab: Int) {
@@ -234,6 +258,30 @@ class ClearlineController(app: Application) : AndroidViewModel(app) {
         tones.enabled = on
     }
 
+    fun toggleLan(on: Boolean) {
+        val name = state.account.displayName.ifBlank { "Clearline-${lan.selfId}" }
+        if (on) {
+            lan.start(name)
+            state = state.copy(lanOn = true)
+            tones.connect()
+        } else {
+            lan.stop()
+            state = state.copy(lanOn = false, lanPeers = emptyList())
+        }
+    }
+
+    fun setLanDraft(v: String) {
+        state = state.copy(lanDraft = v)
+    }
+
+    fun sendLanChat() {
+        val text = state.lanDraft
+        if (text.isBlank()) return
+        state = state.copy(lanDraft = "")
+        lan.sendChat(text)
+        tones.tap()
+    }
+
     private fun startMedia() {
         val call = state.activeCall
         val demo = state.account.demoMode || state.account.domain.isBlank() || remoteMedia == null
@@ -256,6 +304,7 @@ class ClearlineController(app: Application) : AndroidViewModel(app) {
     }
 
     override fun onCleared() {
+        lan.stop()
         sip.stop()
         tones.stopLoops()
         stopMedia()

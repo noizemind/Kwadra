@@ -15,3 +15,5 @@ node_modules/
 windows-clearline/dist/
 windows-clearline/release/
 *.log
+*.tar.gz
+*.exe

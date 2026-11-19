@@ -43,6 +43,16 @@ export type ActiveCall = {
   connectedAt?: number;
 };
 
+export type LanPeer = { id: string; name: string; host: string; port: number };
+export type LanMessage = {
+  id: string;
+  fromId: string;
+  fromName: string;
+  text: string;
+  ts: number;
+  mine: boolean;
+};
+
 export type AppState = {
   account: SipAccount;
   contacts: Contact[];
@@ -53,6 +63,11 @@ export type AppState = {
   tab: number;
   dialBuffer: string;
   search: string;
+  lanOn: boolean;
+  lanPeers: LanPeer[];
+  lanMessages: LanMessage[];
+  lanDraft: string;
+  splash: boolean;
 };
 
 declare global {
@@ -61,6 +76,11 @@ declare global {
       configureSip: (account: SipAccount) => Promise<{ ok: boolean }>;
       registerSip: () => Promise<{ ok: boolean; demo?: boolean; error?: string }>;
       onReg: (cb: (p: { state: RegState; detail: string }) => void) => () => void;
+      lanStart: (name: string) => Promise<{ ok: boolean; id?: string }>;
+      lanStop: () => Promise<{ ok: boolean }>;
+      lanSend: (text: string) => Promise<{ ok: boolean }>;
+      onLanPeers: (cb: (peers: LanPeer[]) => void) => () => void;
+      onLanMessage: (cb: (msg: LanMessage) => void) => () => void;
     };
   }
 }

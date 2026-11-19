@@ -62,6 +62,11 @@ export function App() {
     tab: 0,
     dialBuffer: "",
     search: "",
+    lanOn: false,
+    lanPeers: [],
+    lanMessages: [],
+    lanDraft: "",
+    splash: true,
   }));
   const [edit, setEdit] = useState<Contact | null>(null);
   const [draftAcc, setDraftAcc] = useState(state.account);
@@ -81,12 +86,26 @@ export function App() {
     const t = window.setTimeout(() => {
       setState((s) => ({ ...s, regState: "REGISTERED", regDetail: "Demo · local softphone" }));
     }, 400);
+    const splashT = window.setTimeout(() => {
+      setState((s) => ({ ...s, splash: false }));
+      tones.connect();
+    }, 1600);
     const off = window.clearline?.onReg((p) => {
       setState((s) => ({ ...s, regState: p.state, regDetail: p.detail }));
     });
+    const offPeers = window.clearline?.onLanPeers((peers) => {
+      setState((s) => ({ ...s, lanPeers: peers }));
+    });
+    const offMsg = window.clearline?.onLanMessage((msg) => {
+      setState((s) => ({ ...s, lanMessages: [...s.lanMessages, msg].slice(-200) }));
+      if (!msg.mine) tones.tap();
+    });
     return () => {
       clearTimeout(t);
+      clearTimeout(splashT);
       off?.();
+      offPeers?.();
+      offMsg?.();
     };
   }, []);
 
@@ -269,6 +288,80 @@ export function App() {
       )}
 
       {state.tab === 2 && (
+        <div className="pane settings">
+          <header className="hero">
+            <div>
+              <h1>Clearline</h1>
+              <p>{state.lanOn ? `LAN mesh · ${state.lanPeers.length} nearby` : "LAN mesh offline"}</p>
+            </div>
+          </header>
+          <div className="toggle" onClick={() => {
+            const next = !state.lanOn;
+            const name = state.account.displayName || "Clearline-Win";
+            if (next) {
+              window.clearline?.lanStart(name);
+              tones.connect();
+            } else {
+              window.clearline?.lanStop();
+            }
+            setState((s) => ({ ...s, lanOn: next, lanPeers: next ? s.lanPeers : [] }));
+          }}>
+            <div>
+              <strong>Share presence on Wi‑Fi</strong>
+              <div className="meta">UDP beacon + TCP chat on the local network</div>
+            </div>
+            <div className={`switch ${state.lanOn ? "on" : ""}`}>
+              <i />
+            </div>
+          </div>
+          <div className="list">
+            {state.lanPeers.map((p) => (
+              <div className="row" key={p.id}>
+                <div className="avatar">{p.name.slice(0, 1).toUpperCase()}</div>
+                <div className="row-body">
+                  <strong>{p.name}</strong>
+                  <span>{p.host}:{p.port}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="list" style={{ maxHeight: 220, overflow: "auto" }}>
+            {state.lanMessages.map((m) => (
+              <div key={m.id} className="meta" style={{ marginBottom: 8, color: m.mine ? "var(--sky)" : "var(--ink)" }}>
+                <strong>{m.fromName}:</strong> {m.text}
+              </div>
+            ))}
+            {!state.lanMessages.length && <div className="empty">Turn on LAN and say hi to nearby Clearline peers.</div>}
+          </div>
+          <div className="field">
+            <input
+              value={state.lanDraft}
+              placeholder="Message the LAN…"
+              onChange={(e) => setState((s) => ({ ...s, lanDraft: e.target.value }))}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && state.lanDraft.trim()) {
+                  window.clearline?.lanSend(state.lanDraft);
+                  setState((s) => ({ ...s, lanDraft: "" }));
+                  tones.tap();
+                }
+              }}
+            />
+          </div>
+          <button
+            className="btn primary"
+            onClick={() => {
+              if (!state.lanDraft.trim()) return;
+              window.clearline?.lanSend(state.lanDraft);
+              setState((s) => ({ ...s, lanDraft: "" }));
+              tones.tap();
+            }}
+          >
+            Send
+          </button>
+        </div>
+      )}
+
+      {state.tab === 3 && (
         <div className="pane">
           <header className="hero">
             <div>
@@ -297,7 +390,7 @@ export function App() {
         </div>
       )}
 
-      {state.tab === 3 && (
+      {state.tab === 4 && (
         <div className="pane settings">
           <header className="hero">
             <div>
@@ -357,11 +450,12 @@ export function App() {
         {[
           ["People", 0],
           ["Dial", 1],
-          ["Recents", 2],
-          ["Setup", 3],
+          ["LAN", 2],
+          ["Recents", 3],
+          ["Setup", 4],
         ].map(([label, idx]) => (
           <button
-            key={label}
+            key={label as string}
             className={state.tab === idx ? "on" : ""}
             onClick={() => {
               tones.tap();
@@ -372,6 +466,14 @@ export function App() {
           </button>
         ))}
       </nav>
+
+      {state.splash && (
+        <div className="call-overlay" onClick={() => setState((s) => ({ ...s, splash: false }))}>
+          <div className="call-avatar">C</div>
+          <h2>Clearline</h2>
+          <div className="phase">sky · glass · voice</div>
+        </div>
+      )}
 
       {call && (
         <div className="call-overlay">

@@ -195,7 +195,7 @@ input {
 .nav {
   margin: 10px 16px 14px;
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 4px;
   padding: 8px 6px;
   border-radius: 28px;

@@ -69,4 +69,9 @@ data class AppState(
     val tab: Int = 0,
     val dialBuffer: String = "",
     val search: String = "",
+    val lanOn: Boolean = false,
+    val lanPeers: List<app.clearline.lan.LanPeer> = emptyList(),
+    val lanMessages: List<app.clearline.lan.LanMessage> = emptyList(),
+    val lanDraft: String = "",
+    val splash: Boolean = true,
 )
