@@ -7,21 +7,22 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.clearline.audio.ClearTones
+import app.clearline.audio.RtpAudioSession
 import app.clearline.data.ActiveCall
 import app.clearline.data.AppState
 import app.clearline.data.CallDirection
 import app.clearline.data.CallPhase
 import app.clearline.data.CallRecord
 import app.clearline.data.Contact
-import app.clearline.data.RegState
 import app.clearline.data.SipAccount
 import app.clearline.data.Store
 import app.clearline.sip.SipEngine
-import kotlinx.coroutines.launch
 
 class ClearlineController(app: Application) : AndroidViewModel(app) {
     private val store = Store(app)
     private val tones = ClearTones()
+    private val rtp = RtpAudioSession()
+    private val appCtx = app.applicationContext
 
     var state by mutableStateOf(
         AppState(
@@ -42,11 +43,13 @@ class ClearlineController(app: Application) : AndroidViewModel(app) {
             when (phase) {
                 CallPhase.IDLE -> {
                     tones.stopLoops()
+                    stopMedia()
                     state = state.copy(activeCall = null)
                 }
                 CallPhase.ENDING -> {
                     tones.stopLoops()
                     tones.hangup()
+                    stopMedia()
                     state = state.copy(activeCall = current?.copy(phase = phase))
                 }
                 CallPhase.RINGING_OUT -> {
@@ -56,21 +59,28 @@ class ClearlineController(app: Application) : AndroidViewModel(app) {
                 CallPhase.RINGING_IN -> {
                     tones.startRingtone()
                     state = state.copy(activeCall = current?.copy(phase = phase))
+                    current?.let {
+                        CallService.start(appCtx, "Incoming · Clearline", it.displayName)
+                    }
                 }
                 CallPhase.ACTIVE -> {
                     tones.stopLoops()
                     tones.connect()
-                    state = state.copy(
-                        activeCall = current?.copy(
-                            phase = phase,
-                            connectedAt = current.connectedAt ?: System.currentTimeMillis(),
-                        ),
+                    val updated = current?.copy(
+                        phase = phase,
+                        connectedAt = current.connectedAt ?: System.currentTimeMillis(),
                     )
+                    state = state.copy(activeCall = updated)
+                    startMedia(echoDemo = state.account.demoMode || state.account.domain.isBlank())
+                    updated?.let {
+                        CallService.start(appCtx, it.displayName, "Clearline call")
+                    }
                 }
                 CallPhase.DIALING -> {
                     state = state.copy(activeCall = current?.copy(phase = phase))
                 }
                 CallPhase.HELD -> {
+                    rtp.muted = true
                     state = state.copy(activeCall = current?.copy(phase = phase, held = true))
                 }
             }
@@ -166,19 +176,30 @@ class ClearlineController(app: Application) : AndroidViewModel(app) {
     fun toggleMute() {
         val call = state.activeCall ?: return
         tones.tap()
-        state = state.copy(activeCall = call.copy(muted = !call.muted))
+        val muted = !call.muted
+        rtp.muted = muted || call.held
+        state = state.copy(activeCall = call.copy(muted = muted))
     }
 
     fun toggleSpeaker() {
         val call = state.activeCall ?: return
         tones.tap()
-        state = state.copy(activeCall = call.copy(onSpeaker = !call.onSpeaker))
+        val on = !call.onSpeaker
+        rtp.speakerphone = on
+        state = state.copy(activeCall = call.copy(onSpeaker = on))
+        // Restart audio path so AudioTrack usage updates.
+        if (call.phase == CallPhase.ACTIVE || call.phase == CallPhase.HELD) {
+            startMedia(echoDemo = state.account.demoMode || state.account.domain.isBlank())
+            rtp.muted = call.muted || call.held
+            rtp.speakerphone = on
+        }
     }
 
     fun toggleHold() {
         val call = state.activeCall ?: return
         tones.tap()
         val held = !call.held
+        rtp.muted = held || call.muted
         state = state.copy(
             activeCall = call.copy(
                 held = held,
@@ -205,9 +226,21 @@ class ClearlineController(app: Application) : AndroidViewModel(app) {
         tones.enabled = on
     }
 
+    private fun startMedia(echoDemo: Boolean) {
+        rtp.muted = state.activeCall?.muted == true || state.activeCall?.held == true
+        rtp.speakerphone = state.activeCall?.onSpeaker == true
+        rtp.start(echoDemo = echoDemo)
+    }
+
+    private fun stopMedia() {
+        rtp.stop()
+        CallService.stop(appCtx)
+    }
+
     override fun onCleared() {
         sip.stop()
         tones.stopLoops()
+        stopMedia()
         super.onCleared()
     }
 }

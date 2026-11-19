@@ -1,10 +1,18 @@
-# Clearline
+# Clearline (Android module)
 
-Original SIP softphone for **Android** and **Windows**. Contacts, dialer, recents, in-call controls, and SIP account fields in the MicroSIP tradition (domain, proxy, digest auth) — with Clearline’s own interface and generated tones.
+Original SIP softphone for Android, developed inside the Kwadra monorepo as `:clearline`.
 
-## Android
+The standalone Android repository target is **https://github.com/noizemind/Clearline** (create the empty repo, then the agent can push).
 
-Module `:clearline` in this repo.
+## Features
+
+- Demo mode (default): simulated register & calls
+- SIP REGISTER / INVITE / BYE + MD5 digest when demo is off
+- G.711 µ-law RTP with demo mic→ear echo
+- Foreground call notification
+- Contacts, dialer, recents, mute / hold / speaker
+
+## Build
 
 ```bash
 export ANDROID_HOME=/path/to/Android/Sdk
@@ -12,21 +20,3 @@ export ANDROID_HOME=/path/to/Android/Sdk
 ```
 
 APK: `clearline/build/outputs/apk/debug/clearline-debug.apk`
-
-Demo mode is on by default — register/calls work without a SIP server. Turn it off in Setup and fill username, password, domain to talk to a real PBX.
-
-## Windows
-
-```bash
-cd windows-clearline
-npm install
-npm test
-npm run build
-npm start
-```
-
-Same demo softphone UI. Electron can also send a UDP REGISTER when demo mode is off.
-
-## Sounds
-
-Ringback, ringtone, connect, hangup, and DTMF are synthesized at runtime (Android `AudioTrack` / Web Audio). No third-party softphone assets are bundled.
