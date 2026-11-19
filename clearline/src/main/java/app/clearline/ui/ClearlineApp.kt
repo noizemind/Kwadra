@@ -379,6 +379,7 @@ private fun CallOverlay(vm: ClearlineController) {
     val type = LocalClearType.current
     val call = vm.state.activeCall ?: return
     var tick by remember { mutableLongStateOf(0L) }
+    var showPad by remember { mutableStateOf(false) }
     LaunchedEffect(call.connectedAt, call.phase) {
         while (call.phase == CallPhase.ACTIVE || call.phase == CallPhase.HELD) {
             tick = System.currentTimeMillis()
@@ -408,25 +409,27 @@ private fun CallOverlay(vm: ClearlineController) {
             Spacer(Modifier.height(36.dp))
             Text("Clearline", style = type.caption, color = Color.White.copy(alpha = 0.7f))
             Spacer(Modifier.height(28.dp))
-            Box(
-                Modifier
-                    .size(120.dp)
-                    .scale(if (call.phase == CallPhase.RINGING_IN || call.phase == CallPhase.RINGING_OUT) pulseScale else 1f)
-                    .clip(CircleShape)
-                    .background(Color.White.copy(alpha = 0.12f))
-                    .border(1.dp, Color.White.copy(alpha = 0.25f), CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    call.displayName.take(1).uppercase(),
-                    style = type.brand.copy(fontSize = 48.sp),
-                    color = Color.White,
-                )
+            if (!showPad) {
+                Box(
+                    Modifier
+                        .size(120.dp)
+                        .scale(if (call.phase == CallPhase.RINGING_IN || call.phase == CallPhase.RINGING_OUT) pulseScale else 1f)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.12f))
+                        .border(1.dp, Color.White.copy(alpha = 0.25f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Text(
+                        call.displayName.take(1).uppercase(),
+                        style = type.brand.copy(fontSize = 48.sp),
+                        color = Color.White,
+                    )
+                }
+                Spacer(Modifier.height(22.dp))
+                Text(call.displayName, style = type.title.copy(fontSize = 28.sp), color = Color.White, textAlign = TextAlign.Center)
+                Text(call.peer, style = type.caption, color = Color.White.copy(alpha = 0.65f))
+                Spacer(Modifier.height(10.dp))
             }
-            Spacer(Modifier.height(22.dp))
-            Text(call.displayName, style = type.title.copy(fontSize = 28.sp), color = Color.White, textAlign = TextAlign.Center)
-            Text(call.peer, style = type.caption, color = Color.White.copy(alpha = 0.65f))
-            Spacer(Modifier.height(10.dp))
             AnimatedContent(
                 targetState = call.phase,
                 transitionSpec = { fadeIn() togetherWith fadeOut() },
@@ -452,6 +455,12 @@ private fun CallOverlay(vm: ClearlineController) {
                     CircleAction(Icons.Default.CallEnd, colors.coral, "Decline") { vm.hangup() }
                     CircleAction(Icons.Default.Call, colors.ok, "Accept") { vm.accept() }
                 }
+            } else if (showPad && (call.phase == CallPhase.ACTIVE || call.phase == CallPhase.HELD)) {
+                InCallPad(onDigit = vm::sendInCallDtmf)
+                Spacer(Modifier.height(16.dp))
+                SecondaryButtonLight("Hide keypad") { showPad = false }
+                Spacer(Modifier.height(16.dp))
+                CircleAction(Icons.Default.CallEnd, colors.coral, "Hang up") { vm.hangup() }
             } else {
                 Row(
                     Modifier.fillMaxWidth(),
@@ -465,6 +474,9 @@ private fun CallOverlay(vm: ClearlineController) {
                         if (call.held) Icons.Default.PlayArrow else Icons.Default.Pause,
                         if (call.held) "Resume" else "Hold",
                     ) { vm.toggleHold() }
+                    SoftAction(Icons.Default.Dialpad, "Keypad") {
+                        if (call.phase == CallPhase.ACTIVE || call.phase == CallPhase.HELD) showPad = true
+                    }
                     SoftAction(Icons.AutoMirrored.Filled.VolumeUp, if (call.onSpeaker) "Speaker on" else "Speaker") {
                         vm.toggleSpeaker()
                     }
@@ -474,6 +486,45 @@ private fun CallOverlay(vm: ClearlineController) {
             }
             Spacer(Modifier.height(36.dp))
         }
+    }
+}
+
+@Composable
+private fun InCallPad(onDigit: (Char) -> Unit) {
+    val keys = listOf("1", "2", "3", "4", "5", "6", "7", "8", "9", "*", "0", "#")
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        keys.chunked(3).forEach { row ->
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                row.forEach { k ->
+                    Box(
+                        Modifier
+                            .size(68.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.12f))
+                            .border(1.dp, Color.White.copy(alpha = 0.2f), CircleShape)
+                            .clickable { onDigit(k.first()) },
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Text(k, color = Color.White, style = LocalClearType.current.dial.copy(fontSize = 24.sp))
+                    }
+                }
+            }
+            Spacer(Modifier.height(10.dp))
+        }
+    }
+}
+
+@Composable
+private fun SecondaryButtonLight(label: String, onClick: () -> Unit) {
+    Box(
+        Modifier
+            .clip(RoundedCornerShape(16.dp))
+            .border(1.dp, Color.White.copy(alpha = 0.35f), RoundedCornerShape(16.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 18.dp, vertical = 10.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, color = Color.White.copy(alpha = 0.9f), style = LocalClearType.current.caption)
     }
 }
 

@@ -52,7 +52,7 @@ class CallService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle(title)
             .setContentText(text)
-            .setSmallIcon(android.R.drawable.stat_sys_phone_call)
+            .setSmallIcon(R.drawable.ic_call_notif)
             .setContentIntent(open)
             .setOngoing(true)
             .setCategory(NotificationCompat.CATEGORY_CALL)

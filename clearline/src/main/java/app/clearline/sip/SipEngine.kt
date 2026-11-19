@@ -14,7 +14,6 @@ import kotlinx.coroutines.launch
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
-import java.security.MessageDigest
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.random.Random
@@ -28,7 +27,12 @@ class SipEngine(
     private val onReg: (RegState, String) -> Unit,
     private val onCallPhase: (CallPhase, String?) -> Unit,
     private val onCallEnded: (CallRecord) -> Unit,
+    private val onRemoteMedia: (SdpMedia?) -> Unit = {},
 ) {
+    var localRtpPort: Int = 4000
+        private set
+    private var remoteMedia: SdpMedia? = null
+
     private val cseq = AtomicInteger(1)
     private var socket: DatagramSocket? = null
     private var account = SipAccount()
@@ -195,6 +199,8 @@ class SipEngine(
                     cseqLine.contains("REGISTER", true) -> onReg(RegState.REGISTERED, "Registered")
                     cseqLine.contains("INVITE", true) -> {
                         remoteTag = header(msg, "To")?.substringAfter("tag=")?.substringBefore(";") ?: remoteTag
+                        remoteMedia = SdpParse.media(msg)
+                        onRemoteMedia(remoteMedia)
                         connectedAt = System.currentTimeMillis()
                         onCallPhase(CallPhase.ACTIVE, null)
                         runCatching { sendAck(sock) }
@@ -259,7 +265,8 @@ class SipEngine(
         val seq = cseq.getAndIncrement()
         val requestUri = if (peer.contains("@")) "sip:$peer" else "sip:$peer@${account.domain}"
         val from = "\"${account.displayName.ifBlank { account.username }}\"<sip:${account.username}@${account.domain}>;tag=$localTag"
-        val sdp = buildSdp(sock.localPort + 2)
+        localRtpPort = (sock.localPort + 2).coerceIn(1024, 65534)
+        val sdp = buildSdp(localRtpPort)
         val authHeader = auth?.let {
             val response = digest(it, "INVITE", requestUri)
             """Authorization: Digest username="${account.username}", realm="${it.realm}", nonce="${it.nonce}", uri="$requestUri", response="$response", algorithm=MD5"""
@@ -353,16 +360,15 @@ class SipEngine(
         return DigestChallenge(realm, nonce)
     }
 
-    private fun digest(ch: DigestChallenge, method: String, uri: String): String {
-        val ha1 = md5("${account.username}:${ch.realm}:${account.password}")
-        val ha2 = md5("$method:$uri")
-        return md5("$ha1:${ch.nonce}:$ha2")
-    }
-
-    private fun md5(s: String): String {
-        val dig = MessageDigest.getInstance("MD5").digest(s.toByteArray())
-        return dig.joinToString("") { "%02x".format(it) }
-    }
+    private fun digest(ch: DigestChallenge, method: String, uri: String): String =
+        SipCrypto.digestResponse(
+            username = account.username,
+            password = account.password,
+            realm = ch.realm,
+            nonce = ch.nonce,
+            method = method,
+            uri = uri,
+        )
 
     private fun localIp(): String = try {
         DatagramSocket().use { s ->

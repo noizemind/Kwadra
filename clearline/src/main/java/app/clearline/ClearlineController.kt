@@ -8,21 +8,24 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import app.clearline.audio.ClearTones
 import app.clearline.audio.RtpAudioSession
+import app.clearline.audio.VoiceRoute
 import app.clearline.data.ActiveCall
 import app.clearline.data.AppState
 import app.clearline.data.CallDirection
 import app.clearline.data.CallPhase
-import app.clearline.data.CallRecord
 import app.clearline.data.Contact
 import app.clearline.data.SipAccount
 import app.clearline.data.Store
+import app.clearline.sip.SdpMedia
 import app.clearline.sip.SipEngine
 
 class ClearlineController(app: Application) : AndroidViewModel(app) {
     private val store = Store(app)
     private val tones = ClearTones()
     private val rtp = RtpAudioSession()
+    private val route = VoiceRoute(app)
     private val appCtx = app.applicationContext
+    private var remoteMedia: SdpMedia? = null
 
     var state by mutableStateOf(
         AppState(
@@ -71,7 +74,7 @@ class ClearlineController(app: Application) : AndroidViewModel(app) {
                         connectedAt = current.connectedAt ?: System.currentTimeMillis(),
                     )
                     state = state.copy(activeCall = updated)
-                    startMedia(echoDemo = state.account.demoMode || state.account.domain.isBlank())
+                    startMedia()
                     updated?.let {
                         CallService.start(appCtx, it.displayName, "Clearline call")
                     }
@@ -89,6 +92,10 @@ class ClearlineController(app: Application) : AndroidViewModel(app) {
             val recents = listOf(record) + state.recents
             store.saveRecents(recents)
             state = state.copy(recents = recents)
+        },
+        onRemoteMedia = { media ->
+            remoteMedia = media
+            if (state.activeCall?.phase == CallPhase.ACTIVE) startMedia()
         },
     )
 
@@ -120,6 +127,10 @@ class ClearlineController(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    fun sendInCallDtmf(ch: Char) {
+        tones.dtmf(ch)
+    }
+
     fun saveAccount(account: SipAccount) {
         store.saveAccount(account)
         state = state.copy(account = account)
@@ -146,6 +157,7 @@ class ClearlineController(app: Application) : AndroidViewModel(app) {
         if (state.activeCall != null) return
         if (uri.isBlank()) return
         tones.dial()
+        remoteMedia = null
         val display = name.ifBlank {
             state.contacts.firstOrNull { it.uri.equals(uri, true) }?.name ?: uri
         }
@@ -186,13 +198,8 @@ class ClearlineController(app: Application) : AndroidViewModel(app) {
         tones.tap()
         val on = !call.onSpeaker
         rtp.speakerphone = on
+        route.setSpeaker(on)
         state = state.copy(activeCall = call.copy(onSpeaker = on))
-        // Restart audio path so AudioTrack usage updates.
-        if (call.phase == CallPhase.ACTIVE || call.phase == CallPhase.HELD) {
-            startMedia(echoDemo = state.account.demoMode || state.account.domain.isBlank())
-            rtp.muted = call.muted || call.held
-            rtp.speakerphone = on
-        }
     }
 
     fun toggleHold() {
@@ -211,6 +218,7 @@ class ClearlineController(app: Application) : AndroidViewModel(app) {
     fun demoIncoming() {
         if (state.activeCall != null) return
         val from = state.contacts.firstOrNull() ?: Contact(name = "Echo Lab", uri = "echo@demo.clearline")
+        remoteMedia = null
         state = state.copy(
             activeCall = ActiveCall(
                 peer = from.uri,
@@ -226,15 +234,25 @@ class ClearlineController(app: Application) : AndroidViewModel(app) {
         tones.enabled = on
     }
 
-    private fun startMedia(echoDemo: Boolean) {
-        rtp.muted = state.activeCall?.muted == true || state.activeCall?.held == true
-        rtp.speakerphone = state.activeCall?.onSpeaker == true
-        rtp.start(echoDemo = echoDemo)
+    private fun startMedia() {
+        val call = state.activeCall
+        val demo = state.account.demoMode || state.account.domain.isBlank() || remoteMedia == null
+        rtp.muted = call?.muted == true || call?.held == true
+        rtp.speakerphone = call?.onSpeaker == true
+        route.enterCall(speaker = call?.onSpeaker == true)
+        rtp.start(
+            localRtpPort = if (demo) 0 else sip.localRtpPort,
+            remote = remoteMedia?.host,
+            remoteRtpPort = remoteMedia?.port ?: 0,
+            echoDemo = demo,
+        )
     }
 
     private fun stopMedia() {
         rtp.stop()
+        route.leaveCall()
         CallService.stop(appCtx)
+        remoteMedia = null
     }
 
     override fun onCleared() {
