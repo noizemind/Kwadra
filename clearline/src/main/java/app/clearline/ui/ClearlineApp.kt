@@ -64,10 +64,12 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.layout.offset
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -100,6 +102,7 @@ fun ClearlineApp(vm: ClearlineController) {
                 .fillMaxSize()
                 .background(colors.pageBrush),
         ) {
+            AeroSkyDecor()
             Column(
                 Modifier
                     .fillMaxSize()
@@ -123,6 +126,54 @@ fun ClearlineApp(vm: ClearlineController) {
                 state.activeCall?.let { CallOverlay(vm) }
             }
         }
+    }
+}
+
+@Composable
+private fun AeroSkyDecor() {
+    val float = rememberInfiniteTransition(label = "aero")
+    val drift by float.animateFloat(
+        initialValue = 0f,
+        targetValue = 14f,
+        animationSpec = infiniteRepeatable(tween(5200, easing = FastOutSlowInEasing), RepeatMode.Reverse),
+        label = "drift",
+    )
+    Box(Modifier.fillMaxSize()) {
+        Box(
+            Modifier
+                .offset((-40).dp, (80 + drift).dp)
+                .size(220.dp)
+                .background(
+                    Brush.radialGradient(
+                        listOf(Color(0xAAFFFFFF), Color(0x55A8E8FF), Color.Transparent),
+                    ),
+                    CircleShape,
+                ),
+        )
+        Box(
+            Modifier
+                .align(Alignment.TopEnd)
+                .offset(40.dp, (40 - drift).dp)
+                .size(180.dp)
+                .background(
+                    Brush.radialGradient(
+                        listOf(Color(0x99FFFFFF), Color(0x447FE3F0), Color.Transparent),
+                    ),
+                    CircleShape,
+                ),
+        )
+        Box(
+            Modifier
+                .align(Alignment.BottomStart)
+                .offset((-20).dp, (-120).dp)
+                .size(260.dp)
+                .background(
+                    Brush.radialGradient(
+                        listOf(Color(0x66FFFFFF), Color(0x335CC8FF), Color.Transparent),
+                    ),
+                    CircleShape,
+                ),
+        )
     }
 }
 
@@ -252,8 +303,14 @@ private fun DialerPane(vm: ClearlineController) {
             Box(
                 Modifier
                     .size(72.dp)
+                    .shadow(16.dp, CircleShape, ambientColor = Color(0x662EA8E5), spotColor = Color(0x772EA8E5))
                     .clip(CircleShape)
-                    .background(colors.teal)
+                    .background(
+                        Brush.verticalGradient(
+                            listOf(Color(0xFF9AEFFF), Color(0xFF2EA8E5), Color(0xFF0B6BB5)),
+                        ),
+                    )
+                    .border(2.dp, Color.White.copy(alpha = 0.75f), CircleShape)
                     .clickable { vm.callDialBuffer() },
                 contentAlignment = Alignment.Center,
             ) {
@@ -564,9 +621,14 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
         Modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 10.dp)
-            .clip(RoundedCornerShape(22.dp))
-            .background(Color.White.copy(alpha = 0.72f))
-            .border(1.dp, colors.line.copy(alpha = 0.55f), RoundedCornerShape(22.dp))
+            .shadow(18.dp, RoundedCornerShape(28.dp), ambientColor = Color(0x552EA8E5), spotColor = Color(0x662EA8E5))
+            .clip(RoundedCornerShape(28.dp))
+            .background(
+                Brush.verticalGradient(
+                    listOf(Color(0xF2FFFFFF), Color(0xD9E8F7FF), Color(0xC2C9E9FF)),
+                ),
+            )
+            .border(1.dp, Color.White.copy(alpha = 0.85f), RoundedCornerShape(28.dp))
             .padding(vertical = 8.dp),
         horizontalArrangement = Arrangement.SpaceEvenly,
     ) {
@@ -575,12 +637,18 @@ private fun BottomNav(selected: Int, onSelect: (Int) -> Unit) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier
-                    .clip(RoundedCornerShape(14.dp))
+                    .clip(RoundedCornerShape(16.dp))
+                    .then(
+                        if (on) Modifier.background(
+                            Brush.verticalGradient(listOf(Color(0xAAFFFFFF), Color(0x665CC8FF))),
+                            RoundedCornerShape(16.dp),
+                        ) else Modifier,
+                    )
                     .clickable { onSelect(idx) }
                     .padding(horizontal = 12.dp, vertical = 6.dp),
             ) {
-                Icon(icon, contentDescription = label, tint = if (on) colors.teal else colors.muted, modifier = Modifier.size(22.dp))
-                Text(label, style = LocalClearType.current.caption, color = if (on) colors.teal else colors.muted)
+                Icon(icon, contentDescription = label, tint = if (on) colors.sky else colors.muted, modifier = Modifier.size(22.dp))
+                Text(label, style = LocalClearType.current.caption, color = if (on) colors.inkSoft else colors.muted)
             }
         }
     }
@@ -601,10 +669,12 @@ private fun ContactRow(contact: Contact, onCall: () -> Unit, onEdit: () -> Unit)
         Box(
             Modifier
                 .size(46.dp)
+                .shadow(8.dp, CircleShape, ambientColor = Color(0x442EA8E5), spotColor = Color(0x552EA8E5))
                 .clip(CircleShape)
                 .background(
-                    Brush.linearGradient(listOf(colors.teal, colors.inkSoft)),
-                ),
+                    Brush.verticalGradient(listOf(Color(0xFF7FE3F0), Color(0xFF2EA8E5), Color(0xFF0B6BB5))),
+                )
+                .border(1.5.dp, Color.White.copy(alpha = 0.7f), CircleShape),
             contentAlignment = Alignment.Center,
         ) {
             Text(contact.name.take(1).uppercase(), color = Color.White, style = type.title)
@@ -617,12 +687,16 @@ private fun ContactRow(contact: Contact, onCall: () -> Unit, onEdit: () -> Unit)
         Box(
             Modifier
                 .size(44.dp)
+                .shadow(6.dp, CircleShape, ambientColor = Color(0x332EA8E5), spotColor = Color(0x442EA8E5))
                 .clip(CircleShape)
-                .background(colors.teal.copy(alpha = 0.12f))
+                .background(
+                    Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0xFFD6F0FF))),
+                )
+                .border(1.dp, Color.White, CircleShape)
                 .clickable(onClick = onCall),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(Icons.Default.Call, null, tint = colors.teal)
+            Icon(Icons.Default.Call, null, tint = colors.sky)
         }
     }
 }
@@ -637,9 +711,14 @@ private fun DialKey(label: String, onClick: () -> Unit) {
         Modifier
             .size(78.dp)
             .scale(if (pressed) 0.94f else 1f)
+            .shadow(10.dp, CircleShape, ambientColor = Color(0x442EA8E5), spotColor = Color(0x552EA8E5))
             .clip(CircleShape)
-            .background(Color.White.copy(alpha = 0.7f))
-            .border(1.dp, colors.line.copy(alpha = 0.6f), CircleShape)
+            .background(
+                Brush.verticalGradient(
+                    listOf(Color(0xFFFFFFFF), Color(0xFFE3F4FF), Color(0xFFBFE4FF)),
+                ),
+            )
+            .border(1.5.dp, Color.White.copy(alpha = 0.95f), CircleShape)
             .clickable(interactionSource = interaction, indication = null, onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
@@ -654,9 +733,12 @@ private fun SearchField(value: String, onChange: (String) -> Unit) {
         Modifier
             .padding(horizontal = 20.dp, vertical = 8.dp)
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.White.copy(alpha = 0.75f))
-            .border(1.dp, colors.line.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
+            .shadow(10.dp, RoundedCornerShape(20.dp), ambientColor = Color(0x332EA8E5), spotColor = Color(0x442EA8E5))
+            .clip(RoundedCornerShape(20.dp))
+            .background(
+                Brush.verticalGradient(listOf(Color(0xF2FFFFFF), Color(0xCCE8F6FF))),
+            )
+            .border(1.5.dp, Color.White.copy(alpha = 0.9f), RoundedCornerShape(20.dp))
             .padding(horizontal = 16.dp, vertical = 12.dp),
     ) {
         if (value.isEmpty()) {
@@ -667,7 +749,7 @@ private fun SearchField(value: String, onChange: (String) -> Unit) {
             onValueChange = onChange,
             singleLine = true,
             textStyle = LocalClearType.current.body.copy(color = colors.ink),
-            cursorBrush = SolidColor(colors.teal),
+            cursorBrush = SolidColor(colors.sky),
             modifier = Modifier.fillMaxWidth(),
         )
     }
@@ -740,12 +822,17 @@ private fun ToggleRow(title: String, subtitle: String, checked: Boolean, onToggl
 
 @Composable
 private fun PrimaryButton(label: String, onClick: () -> Unit) {
-    val colors = LocalClearColors.current
     Box(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(colors.teal)
+            .shadow(12.dp, RoundedCornerShape(18.dp), ambientColor = Color(0x552EA8E5), spotColor = Color(0x662EA8E5))
+            .clip(RoundedCornerShape(18.dp))
+            .background(
+                Brush.verticalGradient(
+                    listOf(Color(0xFF7FE3F0), Color(0xFF2EA8E5), Color(0xFF0F7EC4)),
+                ),
+            )
+            .border(1.5.dp, Color.White.copy(alpha = 0.65f), RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
             .padding(vertical = 14.dp),
         contentAlignment = Alignment.Center,
@@ -760,13 +847,14 @@ private fun SecondaryButton(label: String, onClick: () -> Unit) {
     Box(
         Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .border(1.dp, colors.teal, RoundedCornerShape(16.dp))
+            .clip(RoundedCornerShape(18.dp))
+            .background(Color.White.copy(alpha = 0.45f))
+            .border(1.5.dp, colors.skyBright.copy(alpha = 0.8f), RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
             .padding(vertical = 14.dp),
         contentAlignment = Alignment.Center,
     ) {
-        Text(label, style = LocalClearType.current.body, color = colors.teal)
+        Text(label, style = LocalClearType.current.body, color = colors.inkSoft)
     }
 }
 
@@ -776,12 +864,16 @@ private fun RoundIcon(icon: ImageVector, desc: String, onClick: () -> Unit) {
     Box(
         Modifier
             .size(44.dp)
+            .shadow(8.dp, CircleShape, ambientColor = Color(0x442EA8E5), spotColor = Color(0x552EA8E5))
             .clip(CircleShape)
-            .background(colors.teal.copy(alpha = 0.12f))
+            .background(
+                Brush.verticalGradient(listOf(Color(0xFFFFFFFF), Color(0xFFD6F0FF))),
+            )
+            .border(1.dp, Color.White, CircleShape)
             .clickable(onClick = onClick),
         contentAlignment = Alignment.Center,
     ) {
-        Icon(icon, desc, tint = colors.teal)
+        Icon(icon, desc, tint = colors.sky)
     }
 }
 
